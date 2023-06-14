@@ -1,1 +1,139 @@
+//Colunas
+#define COL1   pin_b0
+#define COL2   pin_b1
+#define COL3   pin_b2
+#define COL4   pin_b3
+//Linhas
+#define LIN2   pin_b7
+#define LIN3   pin_b6
+#define LIN4   pin_b5
+#define LIN5   pin_b4
+#include <18F4550.h>
+#include <string.h>
+#byte trisb=0xf93
+#fuses HS, NOWDT, PUT, BROWNOUT, NOLVP, CPUDIV1,PLL5 //Configuração dos fusíveis
+#use delay(clock=20000000)
 
+unsigned int32 n=0;
+#use rs232(baud=9600,parity=N,xmit=PIN_C6,rcv=PIN_C7,bits=8)
+const int32 tm=3036;//ajuste tempo de varredura das teclas
+const float t_repete=40;//ajuste tempo de repetição das teclas
+char senha_padrao[5]={'3','3','3','3','\0'};
+char senha_entrada[5];
+char senha_redefinida[5];
+int t=0;
+
+void tecla()
+{
+output_high(pin_d1);
+delay_ms(100);
+output_low(pin_d1);
+}
+
+
+void tecla_vazia()
+{
+
+}
+
+
+void enter()
+{
+senha_entrada[4]='\0';
+int teste = strcmp(senha_entrada,senha_padrao);
+t=0;
+
+if(teste==0)
+{output_high(pin_d7);
+delay_ms(1000);
+output_low(pin_d7);
+memset(senha_entrada,0,5);}
+else{
+memset(senha_entrada,0,5);
+output_high(pin_d6);
+delay_ms(300);
+output_low(pin_d6);
+delay_ms(300);
+output_high(pin_d6);
+delay_ms(300);
+output_low(pin_d6);
+delay_ms(300);}
+}
+
+#int_timer1
+void funcao_tempo()
+{
+static signed int32 n;
+set_timer1(tm+get_timer1());
+n++;
+
+if (n>4) n=0;
+
+switch(n)
+{
+case 1:
+output_low(COL1); 
+output_high(COL2); 
+output_high(COL3); 
+output_high(COL4); 
+
+if (!input(LIN2)) {senha_entrada[t]='1';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN3)) {senha_entrada[t]='4';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN4)) {senha_entrada[t]='7';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN5)) {senha_entrada[t]='*';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+break;
+
+case 2:
+output_high(COL1); 
+output_low(COL2); 
+output_high(COL3); 
+output_high(COL4); 
+
+if (!input(LIN2)) {senha_entrada[t]='2';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN3)) {senha_entrada[t]='5';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN4)) {senha_entrada[t]='8';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN5)) {senha_entrada[t]='0';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+break;
+
+case 3:
+output_high(COL1); 
+output_high(COL2); 
+output_low(COL3); 
+output_high(COL4); 
+
+if (!input(LIN2)) {senha_entrada[t]='3';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN3)) {senha_entrada[t]='6';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN4)) {senha_entrada[t]='9';t++;if(t>4){senha_entrada[4]='\0';t--;tecla();}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN5)) {enter();n=-1*(t_repete);}
+break;
+
+case 4:
+output_high(COL1); 
+output_high(COL2); 
+output_high(COL3); 
+output_low(COL4); 
+
+if (!input(LIN2)) {if(t>0) {senha_entrada[t-1]='\0';t--;}printf("\n%s",senha_entrada);tecla();n=-1*(t_repete);}
+if (!input(LIN3)) {tecla_vazia();n=-1*(t_repete);}
+if (!input(LIN4)) {tecla_vazia();n=-1*(t_repete);}
+if (!input(LIN5)) {tecla_vazia();n=-1*(t_repete);}
+break;
+}
+
+}
+
+void main()
+{
+trisb=0xf0;//pinos b7 ao b4 entrada e pinos b3 ao b0 são saídas
+enable_interrupts(GLOBAL);
+enable_interrupts(INT_timer1);
+setup_timer_1(T1_INTERNAL|T1_DIV_BY_1);
+port_b_pullups(TRUE);
+delay_ms(1000);
+printf("   Teclado   ");
+printf("  Matricial ");
+printf("%s", senha_padrao);
+delay_ms(1000);
+while(true)
+{ }
+}
